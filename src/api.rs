@@ -1,3 +1,4 @@
+use base64::{engine::general_purpose, Engine};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
@@ -19,7 +20,6 @@ struct Input {
 struct Voice {
   language_code: String,
   name: String,
-  ssml_gender: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -34,15 +34,46 @@ struct Response {
   audio_content: String,
 }
 
-pub async fn generate_tts(text: String) -> String {
+// pub async fn generate_tts(text: String, model: String) -> Vec<u8> {
+//   let bearer_token = std::env::var("GCLOUD_BEARER").unwrap();
+//   let project = "ornate-axiom-327716";
+//   let post_body = PostBody {
+//     input: Input { text },
+//     voice: Voice {
+//       language_code: "en-us".to_owned(),
+//       name: model,
+//     },
+//     audio_config: AudioConfig {
+//       audio_encoding: "LINEAR16".to_owned(),
+//     },
+//   };
+
+//   let res = Client::new()
+//     .post("https://texttospeech.googleapis.com/v1beta1/text:synthesize")
+//     .bearer_auth(bearer_token)
+//     .header("x-goog-user-project", project)
+//     .body(serde_json::to_string(&post_body).unwrap())
+//     .send()
+//     .await
+//     .unwrap();
+
+//   let text = res.text().await.unwrap();
+//   let json: Response = serde_json::from_str(&text).unwrap();
+
+//   general_purpose::STANDARD
+//     .decode(json.audio_content)
+//     .unwrap()
+//     .to_vec()
+// }
+
+pub async fn generate_tts(text: String, model: String) -> String {
   let bearer_token = std::env::var("GCLOUD_BEARER").unwrap();
   let project = "ornate-axiom-327716";
   let post_body = PostBody {
     input: Input { text },
     voice: Voice {
       language_code: "en-us".to_owned(),
-      name: "en-US-Standard-B".to_owned(),
-      ssml_gender: "MALE".to_owned(),
+      name: model,
     },
     audio_config: AudioConfig {
       audio_encoding: "LINEAR16".to_owned(),
