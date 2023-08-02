@@ -1,81 +1,52 @@
 use base64::engine::general_purpose;
 use base64::Engine;
-use reqwest::Client;
-use serde::{Deserialize, Serialize};
+use conet::generate_tts;
+use hound::WavSpec;
 use std::fs::File;
 use std::io::prelude::*;
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct PostBody {
-  input: Input,
-  voice: Voice,
-  audio_config: AudioConfig,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct Input {
-  text: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct Voice {
-  language_code: String,
-  name: String,
-  ssml_gender: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct AudioConfig {
-  audio_encoding: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct Response {
-  audio_content: String,
-}
+use std::ops::Shr;
 
 #[tokio::main]
 async fn main() {
-  let bearer_token = std::env::var("GCLOUD_BEARER").unwrap();
-  let project = "ornate-axiom-327716";
-  let post_body = PostBody {
-    input: Input {
-      text: "Alpha, bravo, charlie, delta.".to_string(),
-    },
-    voice: Voice {
-      language_code: "en-us".to_owned(),
-      name: "en-US-Standard-B".to_owned(),
-      ssml_gender: "MALE".to_owned(),
-    },
-    audio_config: AudioConfig {
-      audio_encoding: "LINEAR16".to_owned(),
-    },
+  let spec = WavSpec {
+    channels: 1,
+    sample_rate: 24_000,
+    bits_per_sample: 16,
+    sample_format: hound::SampleFormat::Int,
   };
+  let wav_data = generate_tts("Leonskidev".to_owned()).await;
 
-  let res = Client::new()
-    .post("https://texttospeech.googleapis.com/v1beta1/text:synthesize")
-    .bearer_auth(bearer_token)
-    .header("x-goog-user-project", project)
-    .body(serde_json::to_string(&post_body).unwrap())
-    .send()
-    .await
-    .unwrap();
-
-  let text = res.text().await.unwrap();
-  let json: Response = serde_json::from_str(&text).unwrap();
-  let audio_context = json.audio_content;
-
-  let mut file = File::create("audio.wav").unwrap();
+  let mut file = File::create("audio/audio.wav").unwrap();
   file
     .write_all(
       general_purpose::STANDARD
-        .decode(audio_context)
+        .decode(wav_data)
         .unwrap()
         .as_slice(),
     )
     .unwrap();
+
+  let sample_rate = 8000;
+
+  let output_spec = WavSpec {
+    channels: 1,
+    sample_rate: 8_000,
+    bits_per_sample: 8,
+    sample_format: hound::SampleFormat::Int,
+  };
+  let downsample_ratio = spec.sample_rate / sample_rate;
+
+  let mut reader = hound::WavReader::open("audio/audio.wav").unwrap();
+  let mut writer =
+    hound::WavWriter::create("audio/audio_downsampled.wav", output_spec)
+      .unwrap();
+
+  let samples = reader.samples::<i32>().map(|s| s.unwrap());
+  for sample in samples {
+    writer
+      .write_sample(
+        sample >> (spec.bits_per_sample - output_spec.bits_per_sample),
+      )
+      .unwrap();
+  }
 }
