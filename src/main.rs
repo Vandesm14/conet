@@ -16,7 +16,7 @@ async fn main() {
     .await,
     generate_tts(
       converter
-        .convert("Hello, World!")
+        .convert("https://google.com")
         .split(' ')
         .intersperse(". ")
         .collect(),
@@ -41,7 +41,7 @@ async fn main() {
   };
 
   let mut writer =
-    hound::WavWriter::create("audio/downsampled.wav", output_spec).unwrap();
+    hound::WavWriter::create("/tmp/conet/audio.wav", output_spec).unwrap();
 
   lowpass_filter(&mut samples, 24_000.0, 8_000.0);
 
