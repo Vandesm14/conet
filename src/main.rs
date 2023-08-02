@@ -1,14 +1,30 @@
+#![feature(iter_intersperse)]
+
 use conet::generate_tts;
 use hound::WavSpec;
 use lowpass_filter::lowpass_filter;
+use spellabet::{PhoneticConverter, SpellingAlphabet};
 
 #[tokio::main]
 async fn main() {
-  let mut samples = generate_tts(
-    "This is an automated broadcast. Please listen carefully.".to_owned(),
-    "en-US-Standard-F".to_owned(),
-  )
-  .await;
+  let converter = PhoneticConverter::new(&SpellingAlphabet::Nato);
+  let mut samples = [
+    generate_tts(
+      "This is an automated broadcast. Please listen carefully.".to_owned(),
+      "en-US-Standard-A".to_owned(),
+    )
+    .await,
+    generate_tts(
+      converter
+        .convert("Hello, World!")
+        .split(' ')
+        .intersperse(". ")
+        .collect(),
+      "en-US-Standard-F".to_owned(),
+    )
+    .await,
+  ]
+  .concat();
 
   let spec = WavSpec {
     channels: 1,
