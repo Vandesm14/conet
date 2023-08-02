@@ -2,17 +2,15 @@ use base64::engine::general_purpose;
 use base64::Engine;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-extern crate dotenv;
-use dotenv::dotenv;
 use std::fs::File;
 use std::io::prelude::*;
 
 #[derive(Debug, Serialize, Deserialize)]
-#[allow(non_snake_case)]
+#[serde(rename_all = "camelCase")]
 struct PostBody {
   input: Input,
   voice: Voice,
-  audioConfig: AudioConfig,
+  audio_config: AudioConfig,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -21,42 +19,40 @@ struct Input {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[allow(non_snake_case)]
+#[serde(rename_all = "camelCase")]
 struct Voice {
-  languageCode: String,
+  language_code: String,
   name: String,
-  ssmlGender: String,
+  ssml_gender: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[allow(non_snake_case)]
+#[serde(rename_all = "camelCase")]
 struct AudioConfig {
-  audioEncoding: String,
+  audio_encoding: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[allow(non_snake_case)]
+#[serde(rename_all = "camelCase")]
 struct Response {
-  audioContent: String,
+  audio_content: String,
 }
 
 #[tokio::main]
 async fn main() {
-  dotenv().ok();
-
   let bearer_token = std::env::var("GCLOUD_BEARER").unwrap();
-  let project = std::env::var("GCLOUD_PROJECT").unwrap();
+  let project = "ornate-axiom-327716";
   let post_body = PostBody {
     input: Input {
-      text: "Hello, world!".to_string(),
+      text: "Alpha, bravo, charlie, delta.".to_string(),
     },
     voice: Voice {
-      languageCode: "en-gb".to_owned(),
-      name: "en-GB-Standard-A".to_owned(),
-      ssmlGender: "MALE".to_owned(),
+      language_code: "en-us".to_owned(),
+      name: "en-US-Standard-B".to_owned(),
+      ssml_gender: "MALE".to_owned(),
     },
-    audioConfig: AudioConfig {
-      audioEncoding: "MP3".to_owned(),
+    audio_config: AudioConfig {
+      audio_encoding: "LINEAR16".to_owned(),
     },
   };
 
@@ -69,10 +65,11 @@ async fn main() {
     .await
     .unwrap();
 
-  let json = res.json::<Response>().await.unwrap();
-  let audio_context = json.audioContent;
+  let text = res.text().await.unwrap();
+  let json: Response = serde_json::from_str(&text).unwrap();
+  let audio_context = json.audio_content;
 
-  let mut file = File::create("audio.mp3").unwrap();
+  let mut file = File::create("audio.wav").unwrap();
   file
     .write_all(
       general_purpose::STANDARD
