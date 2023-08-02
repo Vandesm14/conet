@@ -4,7 +4,6 @@ use conet::generate_tts;
 use hound::WavSpec;
 use std::fs::File;
 use std::io::prelude::*;
-use std::ops::Shr;
 
 #[tokio::main]
 async fn main() {
@@ -16,7 +15,7 @@ async fn main() {
   };
   let wav_data = generate_tts("Leonskidev".to_owned()).await;
 
-  let mut file = File::create("audio/audio.wav").unwrap();
+  let mut file = File::create("audio/control.wav").unwrap();
   file
     .write_all(
       general_purpose::STANDARD
@@ -30,16 +29,15 @@ async fn main() {
 
   let output_spec = WavSpec {
     channels: 1,
-    sample_rate: 8_000,
+    sample_rate: 24_000,
     bits_per_sample: 8,
     sample_format: hound::SampleFormat::Int,
   };
   let downsample_ratio = spec.sample_rate / sample_rate;
 
-  let mut reader = hound::WavReader::open("audio/audio.wav").unwrap();
+  let mut reader = hound::WavReader::open("audio/control.wav").unwrap();
   let mut writer =
-    hound::WavWriter::create("audio/audio_downsampled.wav", output_spec)
-      .unwrap();
+    hound::WavWriter::create("audio/downsampled.wav", output_spec).unwrap();
 
   let samples = reader.samples::<i32>().map(|s| s.unwrap());
   for sample in samples {
