@@ -6,52 +6,40 @@ use hound::WavSpec;
 use lowpass_filter::lowpass_filter;
 use spellabet::{PhoneticConverter, SpellingAlphabet};
 
-enum Word {
-  Word(String),
-  Capital(String),
-}
-
 #[tokio::main]
 async fn main() {
   let secret_phrase = "Hello, World!";
-
   let converter = PhoneticConverter::new(&SpellingAlphabet::Nato);
 
   // Create initial preamble
   let mut samples = generate_tts(
     "This is an automated broadcast. Please listen carefully.",
-    Some("en-US-Standard-A"),
+    Some("en-US-Standard-F"),
   )
   .await;
 
-  // Convert the secret phrase into base64
-  let string = general_purpose::STANDARD.encode(secret_phrase);
-
-  // Convert the base64 string into a sequence of words ("capital <word>" or "<word>")
-  let words = string.chars().map(|c| match c.is_ascii_uppercase() {
-    true => {
-      Word::Capital(converter.convert(c.to_lowercase().to_string().as_str()))
-    }
-    false => Word::Word(converter.convert(c.to_string().as_str())),
-  });
+  // Convert secret phrase into ascii codes (String of numbers)
+  let words = secret_phrase
+    .as_bytes()
+    .iter()
+    // Convert each byte into a string, padded with 0s
+    .map(|b| format!("{:0>3}", b))
+    .reduce(|a, b| a + &b)
+    .unwrap();
+  let words = words.split("").collect::<Vec<_>>();
 
   // Run throuch eagh word and prepend "capital" if it's a capital letter
-  for word in words {
-    match word {
-      Word::Word(word) => {
-        let more_samples = generate_tts(&word, None).await;
-        samples.extend(more_samples);
-        samples.extend([0.0f32; 8_000]);
-      }
-      Word::Capital(word) => {
-        let more_samples = generate_tts("cap", None).await;
-        samples.extend(more_samples);
+  for word in words.chunks(5) {
+    for char in word {
+      let more_samples = generate_tts(char, None).await;
+      samples.extend(more_samples);
 
-        let more_samples = generate_tts(&word, None).await;
-        samples.extend(more_samples);
-        samples.extend([0.0f32; 8_000]);
-      }
+      // Short pause between letters
+      samples.extend([0.0f32; 4_000]);
     }
+
+    // Long pause between words
+    samples.extend([0.0f32; 10_000]);
   }
 
   let spec = WavSpec {
