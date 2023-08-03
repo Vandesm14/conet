@@ -8,23 +8,20 @@ use spellabet::{PhoneticConverter, SpellingAlphabet};
 #[tokio::main]
 async fn main() {
   let converter = PhoneticConverter::new(&SpellingAlphabet::Nato);
-  let mut samples = [
-    generate_tts(
-      "This is an automated broadcast. Please listen carefully.".to_owned(),
-      "en-US-Standard-A".to_owned(),
-    )
-    .await,
-    generate_tts(
-      converter
-        .convert("https://google.com")
-        .split(' ')
-        .intersperse(". ")
-        .collect(),
-      "en-US-Standard-F".to_owned(),
-    )
-    .await,
-  ]
-  .concat();
+
+  let mut samples = generate_tts(
+    "This is an automated broadcast. Please listen carefully.",
+    "en-US-Standard-A",
+  )
+  .await;
+
+  let string = converter.convert("https://google.com");
+  let words = string.split(' ');
+
+  for word in words {
+    let more_samples = generate_tts(word, "en-US-Standard-F").await;
+    samples.extend(more_samples);
+  }
 
   let spec = WavSpec {
     channels: 1,

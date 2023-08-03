@@ -92,17 +92,18 @@ fn send_to_cache(
   std::fs::write(path, contents).unwrap();
 }
 
-pub async fn generate_tts(text: String, model: String) -> Vec<f32> {
-  let base64_string = match get_from_cache(&text, &model) {
+pub async fn generate_tts(text: &str, model: &str) -> Vec<f32> {
+  let text = text.to_lowercase();
+  let text = text.as_str();
+
+  let base64_string = match get_from_cache(text, model) {
     Some(val) => {
       println!("Cache hit: {}-{}", text, model);
-
       val
     }
     None => {
       println!("Cache miss: {}-{}", text, model);
-
-      let val = request_tts(&text, &model).await;
+      let val = request_tts(text, model).await;
       send_to_cache(text, model, &val);
       val
     }
