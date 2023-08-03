@@ -136,11 +136,11 @@ impl Tts {
 
     let base64_string = match Tts::get_from_cache(self, text, &model) {
       Some(val) => {
-        println!("Cache hit: {}-{}", text, &model);
+        println!("Cache hit: \"{}\" (model {})", text, &model);
         val
       }
       None => {
-        println!("Cache miss: {}-{}", text, model);
+        println!("Cache miss: \"{}\" (model {})", text, &model);
         let val = request_tts(text, &model).await;
         Tts::send_to_cache(self, text, model, &val);
         val
