@@ -35,6 +35,7 @@ struct Response {
   audio_content: String,
 }
 
+/// Send an API request to Google Cloud Text-to-Speech and return the Base64 WAVE data
 async fn request_tts(text: &str, model: &str) -> String {
   let bearer_token = std::env::var("GCLOUD_BEARER").unwrap();
   let project = "ornate-axiom-327716";
@@ -66,6 +67,7 @@ async fn request_tts(text: &str, model: &str) -> String {
   json.audio_content
 }
 
+/// Get the Base64 WAVE data from the cache
 fn get_from_cache(
   text: impl AsRef<[u8]>,
   model: impl AsRef<[u8]>,
@@ -81,6 +83,7 @@ fn get_from_cache(
   }
 }
 
+/// Save the Base64 WAVE data to the cache
 fn send_to_cache(
   text: impl AsRef<[u8]>,
   model: impl AsRef<[u8]>,
@@ -93,6 +96,7 @@ fn send_to_cache(
   std::fs::write(path, contents).unwrap();
 }
 
+/// Generate a Vec of f64 samples from a string
 pub async fn generate_tts(text: &str, model: Option<&str>) -> Vec<f32> {
   let text = text.to_lowercase();
   let text = text.as_str();
@@ -122,6 +126,7 @@ pub async fn generate_tts(text: &str, model: Option<&str>) -> Vec<f32> {
   vec_u8_to_vec_f32(general_purpose::STANDARD.decode(base64_string).unwrap())
 }
 
+/// Convert a Vec of u8 samples to a Vec of f64 samples (little-endian)
 fn vec_u8_to_vec_f32(vec_u8: Vec<u8>) -> Vec<f32> {
   vec_u8
     .chunks_exact(2)

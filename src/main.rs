@@ -15,6 +15,9 @@ async fn main() {
   )
   .await;
 
+  // Long pause between preamble and secret phrase
+  samples.extend([0.0f32; 24_000]);
+
   // Convert secret phrase into ascii codes (String of numbers)
   let words = secret_phrase
     .as_bytes()
@@ -23,12 +26,17 @@ async fn main() {
     .map(|b| format!("{:0>3}", b))
     .reduce(|a, b| a + &b)
     .unwrap();
-  let words = words.split("").collect::<Vec<_>>();
 
-  // Run throuch eagh word and prepend "capital" if it's a capital letter
-  for word in words.chunks(5) {
+  // Split the ascii string into chars
+  let words = words.chars().collect::<Vec<_>>();
+
+  // Split into chunks of 5
+  let words = words.chunks(5);
+
+  // Run throuch each chunk and TTS samples
+  for word in words {
     for char in word {
-      let more_samples = generate_tts(char, None).await;
+      let more_samples = generate_tts(&char.to_string(), None).await;
       samples.extend(more_samples);
 
       // Short pause between letters
@@ -61,6 +69,7 @@ async fn main() {
   let downsampling_factor =
     (spec.sample_rate / output_spec.sample_rate) as usize;
 
+  // Downsample to 8kHz
   for sample in samples
     .iter()
     .skip(downsampling_factor - 1)
