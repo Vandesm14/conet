@@ -31,6 +31,10 @@ struct Args {
   /// Disable random per-chunk voice selection
   #[arg(long)]
   no_random: bool,
+
+  /// Beginning preamble message
+  #[arg(long)]
+  preamble: Option<String>,
 }
 
 #[tokio::main]
@@ -42,6 +46,7 @@ async fn main() {
   let message = &args.message;
   let output = &args.output;
   let no_random = &args.no_random;
+  let preamble = &args.preamble;
 
   let start_time = Instant::now();
   let mut tts = Tts::new();
@@ -54,16 +59,20 @@ async fn main() {
     tts.without_randomness();
   }
 
+  let preamble = match preamble {
+    Some(preamble) => preamble,
+    None => "This is an automated broadcast. Please listen carefully.",
+  };
+
   // Create initial preamble
-  let mut samples = tts
-    .generate(
-      "This is an automated broadcast. Please listen carefully.",
-      Some("en-US-Standard-F"),
-    )
-    .await;
+  let mut samples = vec![];
+
+  no_encoding(preamble, &mut samples, &mut tts).await;
 
   // Long pause between preamble and secret phrase
-  samples.extend([0.0f32; 24_000]);
+  if preamble.len() > 0 {
+    samples.extend([0.0f32; 24_000]);
+  }
 
   match encoding {
     Some(encoding) => match encoding.as_str() {
