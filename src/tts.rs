@@ -72,9 +72,12 @@ impl Tts {
 
     let path = format!("/tmp/conet/{}.wav", key);
     if std::path::Path::new(&path).exists() {
-      let data = std::fs::read_to_string(path).unwrap();
-      self.memcache.insert(key.clone(), data.clone());
+      let data = std::fs::read(path).unwrap();
 
+      // Encode the data back into Base64 (from string)
+      let data = general_purpose::STANDARD.encode(data);
+
+      self.memcache.insert(key.clone(), data.clone());
       Some(data)
     } else {
       None
@@ -86,7 +89,7 @@ impl Tts {
     &mut self,
     text: impl AsRef<[u8]>,
     model: impl AsRef<[u8]>,
-    contents: impl AsRef<[u8]>,
+    contents: &str,
   ) {
     let text = general_purpose::STANDARD.encode(text);
     let model = general_purpose::STANDARD.encode(model);
@@ -101,6 +104,9 @@ impl Tts {
     if !self.use_cache {
       return;
     }
+
+    // Decode Base64 into bytes
+    let contents = general_purpose::STANDARD.decode(contents).unwrap();
 
     fs::create_dir_all("/tmp/conet").unwrap();
     let path = format!("/tmp/conet/{}.wav", key);
