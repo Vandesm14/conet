@@ -20,7 +20,7 @@ async fn main() {
   // Create initial preamble
   let mut samples = generate_tts(
     "This is an automated broadcast. Please listen carefully.",
-    "en-US-Standard-A",
+    Some("en-US-Standard-A"),
   )
   .await;
 
@@ -39,15 +39,15 @@ async fn main() {
   for word in words {
     match word {
       Word::Word(word) => {
-        let more_samples = generate_tts(&word, "en-US-Standard-F").await;
+        let more_samples = generate_tts(&word, None).await;
         samples.extend(more_samples);
         samples.extend([0.0f32; 8_000]);
       }
       Word::Capital(word) => {
-        let more_samples = generate_tts("capital", "en-US-Standard-F").await;
+        let more_samples = generate_tts("cap", None).await;
         samples.extend(more_samples);
 
-        let more_samples = generate_tts(&word, "en-US-Standard-F").await;
+        let more_samples = generate_tts(&word, None).await;
         samples.extend(more_samples);
         samples.extend([0.0f32; 8_000]);
       }

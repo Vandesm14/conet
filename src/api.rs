@@ -1,4 +1,5 @@
 use base64::{engine::general_purpose, Engine};
+use rand::{seq::SliceRandom, thread_rng};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
@@ -92,18 +93,27 @@ fn send_to_cache(
   std::fs::write(path, contents).unwrap();
 }
 
-pub async fn generate_tts(text: &str, model: &str) -> Vec<f32> {
+pub async fn generate_tts(text: &str, model: Option<&str>) -> Vec<f32> {
   let text = text.to_lowercase();
   let text = text.as_str();
 
-  let base64_string = match get_from_cache(text, model) {
+  let model_letters = "ABCDEFGHIJ".chars().collect::<Vec<_>>();
+  let mut rng = thread_rng();
+  let model = match model {
+    Some(model) => model.to_owned(),
+    None => {
+      format!("en-US-Standard-{}", model_letters.choose(&mut rng).unwrap())
+    }
+  };
+
+  let base64_string = match get_from_cache(text, &model) {
     Some(val) => {
-      println!("Cache hit: {}-{}", text, model);
+      println!("Cache hit: {}-{}", text, &model);
       val
     }
     None => {
       println!("Cache miss: {}-{}", text, model);
-      let val = request_tts(text, model).await;
+      let val = request_tts(text, &model).await;
       send_to_cache(text, model, &val);
       val
     }
