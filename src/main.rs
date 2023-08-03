@@ -28,7 +28,7 @@ struct Args {
   #[arg(long, short)]
   output: Option<String>,
 
-  /// Random voice per chunk
+  /// Disable random per-chunk voice selection
   #[arg(long)]
   no_random: bool,
 }
