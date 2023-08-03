@@ -3,6 +3,7 @@ use std::rc::Rc;
 
 #[tokio::main]
 async fn main() {
+  let mut tts = Tts::new(TTSService::Espeak);
   let clips: Vec<Rc<dyn Render>> = vec![
     Rc::new(Speak::new("Phonetic encoding")),
     Rc::new(Speak::new("ABCD").with_encoding(Encoding::Phonetic)),
@@ -14,6 +15,6 @@ async fn main() {
     Rc::new(Speak::new("Use different voices").with_encoding(Encoding::Words)),
   ];
 
-  let mut samples = render_all(clips.into_iter()).await;
+  let mut samples = render_all(clips.into_iter(), &mut tts).await;
   save_audio_file(&mut samples, "audio.wav");
 }

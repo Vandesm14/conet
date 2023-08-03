@@ -198,12 +198,12 @@ impl Render for Pause {
 /// Renders all clips and returns the WAV samples
 pub async fn render_all(
   clips: impl Iterator<Item = Rc<dyn Render>>,
+  tts: &mut Tts,
 ) -> Vec<f32> {
-  let mut tts = Tts::new();
   let mut samples = vec![];
 
   for clip in clips {
-    clip.render(&mut samples, &mut tts).await;
+    clip.render(&mut samples, tts).await;
   }
 
   samples

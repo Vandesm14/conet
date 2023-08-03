@@ -5,15 +5,27 @@ use std::fs;
 use base64::{engine::general_purpose, Engine};
 use rand::{rngs::StdRng, Rng, SeedableRng};
 
-use crate::request_tts;
+use crate::{espeak_tts, google_cloud_tts};
+
+/// The voice model to use
 
 #[derive(Debug, Clone)]
+pub enum TTSService {
+  /// [Google Cloud Text-to-Speech](https://cloud.google.com/text-to-speech)
+  Google,
+
+  /// [Espeak](https://espeak.sourceforge.net/) ([itsfoss](https://itsfoss.com/espeak-text-speech-linux/))
+  Espeak,
+}
+
 /// Creates a text-to-speech instance
+#[derive(Debug, Clone)]
 pub struct Tts {
   rng: StdRng,
   use_cache: bool,
   use_randomness: bool,
   memcache: std::collections::HashMap<String, String>,
+  service: TTSService,
 }
 
 impl Default for Tts {
@@ -26,14 +38,18 @@ impl Default for Tts {
       use_cache: true,
       use_randomness: true,
       memcache: std::collections::HashMap::new(),
+      service: TTSService::Google,
     }
   }
 }
 
 impl Tts {
   /// Create a new TTS instance
-  pub fn new() -> Self {
-    Self::default()
+  pub fn new(service: TTSService) -> Self {
+    Tts {
+      service,
+      ..Default::default()
+    }
   }
 
   /// Disables the cache (still uses the memcache)
@@ -126,15 +142,21 @@ impl Tts {
     let text = text.as_str();
 
     let model_letters = "ABCDEFGHIJ".chars().collect::<Vec<_>>();
-    let model = match model {
-      Some(model) => model.to_owned(),
-      None => match self.use_randomness {
-        true => model_letters[self.rng.gen_range(0..model_letters.len())],
-        false => 'F',
+    let model = match self.service {
+      TTSService::Google => {
+        let model = match model {
+          Some(model) => model.to_owned(),
+          None => match self.use_randomness {
+            true => model_letters[self.rng.gen_range(0..model_letters.len())],
+            false => 'F',
+          }
+          .to_string(),
+        };
+        format!("en-US-Standard-{}", model)
       }
-      .to_string(),
+      // TODO: Implement model selection for eSpeak
+      TTSService::Espeak => "en".to_owned(),
     };
-    let model = format!("en-US-Standard-{}", model);
 
     let base64_string = match Tts::get_from_cache(self, text, &model) {
       Some(val) => {
@@ -143,9 +165,14 @@ impl Tts {
       }
       None => {
         println!("Cache miss: \"{}\" (model {})", text, &model);
-        let val = request_tts(text, &model).await;
-        Tts::send_to_cache(self, text, model, &val);
-        val
+        let result = match self.service {
+          TTSService::Google => google_cloud_tts(text, &model).await,
+          TTSService::Espeak => espeak_tts(text, &model).await,
+        };
+
+        Tts::send_to_cache(self, text, model, &result);
+
+        result
       }
     };
 
