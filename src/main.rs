@@ -20,8 +20,15 @@ async fn main() {
   // Long pause between preamble and secret phrase
   samples.extend([0.0f32; 24_000]);
 
+  ascii_encoding(secret_phrase, &mut samples, &mut tts).await;
+
+  // Save audio file
+  save_audio_file(&mut samples);
+}
+
+async fn ascii_encoding(string: &str, samples: &mut Vec<f32>, tts: &mut TTS) {
   // Convert secret phrase into ascii codes (String of numbers)
-  let words = secret_phrase
+  let words = string
     .as_bytes()
     .iter()
     // Convert each byte into a string, padded with 0s
@@ -48,7 +55,9 @@ async fn main() {
     // Long pause between words
     samples.extend([0.0f32; 10_000]);
   }
+}
 
+fn save_audio_file(samples: &mut [f32]) {
   let spec = WavSpec {
     channels: 1,
     sample_rate: 24_000,
@@ -66,7 +75,7 @@ async fn main() {
   let mut writer =
     hound::WavWriter::create("/tmp/conet/audio.wav", output_spec).unwrap();
 
-  lowpass_filter(&mut samples, 24_000.0, 8_000.0);
+  lowpass_filter(samples, 24_000.0, 8_000.0);
 
   let downsampling_factor =
     (spec.sample_rate / output_spec.sample_rate) as usize;
