@@ -163,7 +163,7 @@ impl<'a> Clip<'a> {
                 samples.extend(more_samples);
 
                 // Short pause between letters
-                Clip::from(Pause(600)).render(samples, tts).await;
+                Clip::from(Pause(160)).render(samples, tts).await;
               }
 
               // Long pause between words
