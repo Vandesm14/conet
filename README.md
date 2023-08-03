@@ -2,7 +2,7 @@
 
 Build cryptographic audio messages using Text-To-Speech.
 
-_Inspired by [Number Stations](https://en.wikipedia.org/wiki/Numbers_station) and [Person of Interest](https://en.wikipedia.org/wiki/Person_of_Interest_(TV*series))*
+_Inspired by [Number Stations](https://en.wikipedia.org/wiki/Numbers_station) and [Person of Interest](https://en.wikipedia.org/wiki/Person_of_Interest_(TV\*series))\_
 
 ## Pre-requisites
 
