@@ -3,6 +3,7 @@
 use conet::Tts;
 use hound::WavSpec;
 use lowpass_filter::lowpass_filter;
+use spellabet::{PhoneticConverter, SpellingAlphabet};
 
 #[tokio::main]
 async fn main() {
@@ -54,6 +55,29 @@ async fn ascii_encoding(string: &str, samples: &mut Vec<f32>, tts: &mut Tts) {
 
     // Long pause between words
     samples.extend([0.0f32; 10_000]);
+  }
+}
+
+async fn phonetic_encoding(
+  string: &str,
+  samples: &mut Vec<f32>,
+  tts: &mut Tts,
+) {
+  let converter = PhoneticConverter::new(&SpellingAlphabet::Nato);
+
+  // Convert secret phrase into phonetic alphabet
+  let string = converter.convert(string);
+
+  // Split into words
+  let words = string.split_whitespace();
+
+  // Run throuch each word and TTS samples
+  for word in words {
+    let more_samples = tts.generate(word, None).await;
+    samples.extend(more_samples);
+
+    // Short pause between words
+    samples.extend([0.0f32; 4_000]);
   }
 }
 
