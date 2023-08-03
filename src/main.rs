@@ -134,6 +134,12 @@ async fn phonetic_encoding(
 
   // Run throuch each word and TTS samples
   for word in words {
+    if word.to_lowercase().as_str() == "space" {
+      // Long pause between words
+      samples.extend([0.0f32; 16_000]);
+      continue;
+    }
+
     let more_samples = tts.generate(word, None).await;
     samples.extend(more_samples);
 
