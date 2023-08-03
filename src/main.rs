@@ -60,6 +60,7 @@ async fn main() {
     Some(encoding) => match encoding.as_str() {
       "ascii" => ascii_encoding(message, &mut samples, &mut tts).await,
       "phonetic" => phonetic_encoding(message, &mut samples, &mut tts).await,
+      "words" => words_encoding(message, &mut samples, &mut tts).await,
       _ => panic!("Invalid encoding method: {}", encoding),
     },
     None => no_encoding(message, &mut samples, &mut tts).await,
@@ -86,6 +87,17 @@ async fn main() {
 async fn no_encoding(string: &str, samples: &mut Vec<f32>, tts: &mut Tts) {
   let more_samples = tts.generate(string, None).await;
   samples.extend(more_samples);
+}
+
+async fn words_encoding(string: &str, samples: &mut Vec<f32>, tts: &mut Tts) {
+  // Split the secret phrase into words
+  let words = string.split_whitespace();
+
+  // Run through each word and TTS samples
+  for word in words {
+    let more_samples = tts.generate(word, None).await;
+    samples.extend(more_samples);
+  }
 }
 
 async fn ascii_encoding(string: &str, samples: &mut Vec<f32>, tts: &mut Tts) {
