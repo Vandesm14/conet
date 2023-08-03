@@ -70,7 +70,7 @@ impl Tts {
       return None;
     }
 
-    let path = format!("/tmp/conet/{}.wav", key);
+    let path = format!("/tmp/conetto/{}.wav", key);
     if std::path::Path::new(&path).exists() {
       let data = std::fs::read(path).unwrap();
 
@@ -108,8 +108,8 @@ impl Tts {
     // Decode Base64 into bytes
     let contents = general_purpose::STANDARD.decode(contents).unwrap();
 
-    fs::create_dir_all("/tmp/conet").unwrap();
-    let path = format!("/tmp/conet/{}.wav", key);
+    fs::create_dir_all("/tmp/conetto").unwrap();
+    let path = format!("/tmp/conetto/{}.wav", key);
     std::fs::write(path, contents).unwrap();
   }
 
