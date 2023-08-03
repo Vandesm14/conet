@@ -70,7 +70,7 @@ async fn main() {
   no_encoding(preamble, &mut samples, &mut tts).await;
 
   // Long pause between preamble and secret phrase
-  if preamble.len() > 0 {
+  if !preamble.is_empty() {
     samples.extend([0.0f32; 24_000]);
   }
 
