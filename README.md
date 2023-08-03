@@ -2,6 +2,8 @@
 
 Build cryptographic audio messages using Text-To-Speech.
 
+_Inspired by [Number Stations](https://en.wikipedia.org/wiki/Numbers_station) and [Person of Interest](https://en.wikipedia.org/wiki/Person_of_Interest_(TV*series))*
+
 ## Pre-requisites
 
 You will need to install [gcloud](https://cloud.google.com/sdk/docs/install) and [Rust](https://www.rust-lang.org/tools/install) to build & use this project.
