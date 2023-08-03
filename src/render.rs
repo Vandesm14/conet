@@ -9,6 +9,7 @@ use spellabet::{PhoneticConverter, SpellingAlphabet};
 use std::{
   fmt::{Display, Formatter},
   rc::Rc,
+  time::Instant,
 };
 
 #[async_trait]
@@ -200,11 +201,21 @@ pub async fn render_all(
   clips: impl Iterator<Item = Rc<dyn Render>>,
   tts: &mut Tts,
 ) -> Vec<f32> {
+  let start_time = Instant::now();
   let mut samples = vec![];
 
+  let mut clip_count = 0;
   for clip in clips {
     clip.render(&mut samples, tts).await;
+    clip_count += 1;
   }
+
+  println!(
+    "Rendered {} samples ({} clips) in {}ms",
+    samples.len(),
+    clip_count,
+    start_time.elapsed().as_millis()
+  );
 
   samples
 }
