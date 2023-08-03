@@ -7,7 +7,6 @@ use lowpass_filter::lowpass_filter;
 #[tokio::main]
 async fn main() {
   let mut tts = TTS::new();
-
   let secret_phrase = "Hello, World!";
 
   // Create initial preamble

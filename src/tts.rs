@@ -29,15 +29,26 @@ impl TTS {
 
   /// Get the Base64 WAVE data from the cache
   pub fn get_from_cache(
+    &mut self,
     text: impl AsRef<[u8]>,
     model: impl AsRef<[u8]>,
   ) -> Option<String> {
     let text = general_purpose::STANDARD.encode(text);
     let model = general_purpose::STANDARD.encode(model);
 
-    let path = format!("/tmp/conet/{}-{}.wav", text, model);
+    let key = format!("{}-{}", text, model);
+
+    // If the data exists in memcache, return it
+    if self.memcache.contains_key(&key) {
+      return Some(self.memcache[&key].clone());
+    }
+
+    let path = format!("/tmp/conet/{}.wav", key);
     if std::path::Path::new(&path).exists() {
-      Some(std::fs::read_to_string(path).unwrap())
+      let data = std::fs::read_to_string(path).unwrap();
+      self.memcache.insert(key.clone(), data.clone());
+
+      Some(data)
     } else {
       None
     }
@@ -45,6 +56,7 @@ impl TTS {
 
   /// Save the Base64 WAVE data to the cache
   pub fn send_to_cache(
+    &mut self,
     text: impl AsRef<[u8]>,
     model: impl AsRef<[u8]>,
     contents: impl AsRef<[u8]>,
@@ -52,7 +64,13 @@ impl TTS {
     let text = general_purpose::STANDARD.encode(text);
     let model = general_purpose::STANDARD.encode(model);
 
-    let path = format!("/tmp/conet/{}-{}.wav", text, model);
+    let key = format!("{}-{}", text, model);
+    // If the key doesn't exist, insert it
+    if !self.memcache.contains_key(&key) {
+      self.memcache.insert(key.clone(), String::new());
+    }
+
+    let path = format!("/tmp/conet/{}.wav", key);
     std::fs::write(path, contents).unwrap();
   }
 
@@ -74,7 +92,7 @@ impl TTS {
       }
     };
 
-    let base64_string = match TTS::get_from_cache(text, &model) {
+    let base64_string = match TTS::get_from_cache(self, text, &model) {
       Some(val) => {
         println!("Cache hit: {}-{}", text, &model);
         val
@@ -82,7 +100,7 @@ impl TTS {
       None => {
         println!("Cache miss: {}-{}", text, model);
         let val = request_tts(text, &model).await;
-        TTS::send_to_cache(text, model, &val);
+        TTS::send_to_cache(self, text, model, &val);
         val
       }
     };
