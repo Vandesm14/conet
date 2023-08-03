@@ -6,7 +6,7 @@ _Inspired by [Number Stations](https://en.wikipedia.org/wiki/Numbers_station) an
 
 ## Pre-requisites
 
-You will need to install [gcloud](https://cloud.google.com/sdk/docs/install) and [Rust](https://www.rust-lang.org/tools/install) to build & use this project.
+You will need to install [gcloud](https://cloud.google.com/sdk/docs/install) for using Google Text-To-Speech as a TTS service. Alternatively, you can use [eSpeak](#espeak) as the TTS engine.
 
 ### Google Cloud
 
@@ -32,6 +32,10 @@ Alternatively, you can get the bearer token by running `gcloud auth application-
 
 _Note: The bearer token will need to be set whenever you run the project or the binary. Also, Google may revoke the token which Conetto will let you know if this is the case and you need to rerun the steps above._
 
+### eSpeak
+
+If you do not wish to use Google Cloud, you can use [eSpeak](http://espeak.sourceforge.net/) as the TTS engine. You can install `espeak` from their [downloads page](https://espeak.sourceforge.net/download.html) or use `Nix` with our `shell.nix` file.
+
 ## Building
 
 To build the project, run `cargo build --release`.
@@ -44,19 +48,18 @@ Conetto uses a declarative approach to creating an audio file. Here is a simple 
 
 ```rust
 use conetto::*;
-use std::rc::Rc;
 
 #[tokio::main]
 async fn main() {
-  let clips: Vec<Rc<dyn Render>> = vec![
-    Rc::new(Speak::new("Hello, World!")),
-  ];
+  // You can use TTSService::Google for Google Cloud TTS
+  let mut tts = Tts::new(TTSService::Espeak);
+  let clips: Vec<Clip> = vec![Speak::new("Hello, World!").into()];
 
-  let mut samples = render_all(clips.into_iter()).await;
-  save_audio_file(&mut samples, "audio.wav");
+  let mut samples = render_all(clips.into_iter(), &mut tts).await;
+  save_audio_file(&mut samples, DEFAULT_RENDER_PATH);
 }
 ```
 
-Running this code will create an audio file called `audio.wav` in the current directory.
+Running this code will create an audio file at `/tmp/conetto.wav`.
 
-_For more examples, see the [examples](examples) directory._
+_For more examples, see the [examples](./examples) directory._
