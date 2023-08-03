@@ -1,15 +1,12 @@
 #![feature(iter_intersperse)]
 
-use base64::{engine::general_purpose, Engine};
 use conet::generate_tts;
 use hound::WavSpec;
 use lowpass_filter::lowpass_filter;
-use spellabet::{PhoneticConverter, SpellingAlphabet};
 
 #[tokio::main]
 async fn main() {
   let secret_phrase = "Hello, World!";
-  let converter = PhoneticConverter::new(&SpellingAlphabet::Nato);
 
   // Create initial preamble
   let mut samples = generate_tts(
