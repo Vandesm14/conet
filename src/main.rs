@@ -1,19 +1,22 @@
 #![feature(iter_intersperse)]
 
-use conet::generate_tts;
+use conet::TTS;
 use hound::WavSpec;
 use lowpass_filter::lowpass_filter;
 
 #[tokio::main]
 async fn main() {
+  let mut tts = TTS::new();
+
   let secret_phrase = "Hello, World!";
 
   // Create initial preamble
-  let mut samples = generate_tts(
-    "This is an automated broadcast. Please listen carefully.",
-    Some("en-US-Standard-F"),
-  )
-  .await;
+  let mut samples = tts
+    .generate(
+      "This is an automated broadcast. Please listen carefully.",
+      Some("en-US-Standard-F"),
+    )
+    .await;
 
   // Long pause between preamble and secret phrase
   samples.extend([0.0f32; 24_000]);
@@ -36,7 +39,7 @@ async fn main() {
   // Run throuch each chunk and TTS samples
   for word in words {
     for char in word {
-      let more_samples = generate_tts(&char.to_string(), None).await;
+      let more_samples = tts.generate(&char.to_string(), None).await;
       samples.extend(more_samples);
 
       // Short pause between letters
