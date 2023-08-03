@@ -1,7 +1,12 @@
 use base64::{engine::general_purpose, Engine};
-use rand::{seq::SliceRandom, thread_rng};
+use rand::{Rng, SeedableRng};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
+
+const RNG_SEED: [u8; 32] = [
+  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
+  22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
+];
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -102,11 +107,12 @@ pub async fn generate_tts(text: &str, model: Option<&str>) -> Vec<f32> {
   let text = text.as_str();
 
   let model_letters = "ABCDEFGHIJ".chars().collect::<Vec<_>>();
-  let mut rng = thread_rng();
   let model = match model {
     Some(model) => model.to_owned(),
     None => {
-      format!("en-US-Standard-{}", model_letters.choose(&mut rng).unwrap())
+      let mut rng = rand::rngs::StdRng::from_seed(RNG_SEED);
+      let model = model_letters[rng.gen_range(0..model_letters.len())];
+      format!("en-US-Standard-{}", model)
     }
   };
 
