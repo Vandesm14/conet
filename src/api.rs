@@ -1,3 +1,5 @@
+#![warn(missing_docs)]
+
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 

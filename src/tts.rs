@@ -1,3 +1,5 @@
+#![warn(missing_docs)]
+
 use std::fs;
 
 use base64::{engine::general_purpose, Engine};
@@ -6,11 +8,12 @@ use rand::{rngs::StdRng, Rng, SeedableRng};
 use crate::request_tts;
 
 #[derive(Debug, Clone)]
+/// Creates a text-to-speech instance
 pub struct Tts {
   rng: StdRng,
   use_cache: bool,
   use_randomness: bool,
-  pub memcache: std::collections::HashMap<String, String>,
+  memcache: std::collections::HashMap<String, String>,
 }
 
 impl Default for Tts {
@@ -33,7 +36,7 @@ impl Tts {
     Self::default()
   }
 
-  /// Disables the cache
+  /// Disables the cache (still uses the memcache)
   pub fn without_cache(&mut self) -> &mut Self {
     self.use_cache = false;
     self
@@ -113,7 +116,7 @@ impl Tts {
     std::fs::write(path, contents).unwrap();
   }
 
-  /// Generate a Vec of f64 samples from a string
+  /// Generate a Vec of f32 WAVE samples from a string
   pub async fn generate(
     &mut self,
     text: &str,

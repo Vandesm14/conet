@@ -1,3 +1,5 @@
+#![warn(missing_docs)]
+
 use crate::Tts;
 use async_trait::async_trait;
 use core::fmt;
@@ -10,17 +12,27 @@ use std::{
 };
 
 #[async_trait]
+/// A trait for rendering WAVE audio samples (f32)
 pub trait Render {
+  /// Renders the audio samples into the given vector
   async fn render(&self, samples: &mut Vec<f32>, tts: &mut Tts);
 }
 
+/// The encoding method to use when rendering text to speech
 pub enum Encoding {
+  /// Splits the text into separate words
   Words,
+
+  /// Turns the text into ASCII numbers and splits them into chunks of 5 numbers
   Ascii,
+
+  /// Turns the text into NATO phonetic alphabet words
   Phonetic,
 }
 
+/// Creates a speakable (TTS) clip
 pub struct Speak<'a> {
+  /// The text to speak
   pub text: &'a str,
 
   /// If None, a random voice will be selected
@@ -31,6 +43,7 @@ pub struct Speak<'a> {
 }
 
 impl<'a> Speak<'a> {
+  /// Creates a new speakable clip
   pub fn new(text: &'a str) -> Self {
     Self {
       encoding: None,
@@ -39,11 +52,13 @@ impl<'a> Speak<'a> {
     }
   }
 
+  /// Sets the voice to use
   pub fn with_voice(mut self, voice: VoiceModel) -> Self {
     self.voice = Some(voice);
     self
   }
 
+  /// Sets the encoding method to use
   pub fn with_encoding(mut self, encoding: Encoding) -> Self {
     self.encoding = Some(encoding);
     self
@@ -138,6 +153,8 @@ impl<'a> Render for Speak<'a> {
 }
 
 #[derive(Clone, Copy, Debug)]
+/// The voice model to use when rendering text to speech (Based on the `en-US-Standard-*` voices of [Google Cloud Text-to-Speech](https://cloud.google.com/text-to-speech/docs/voices))
+#[allow(missing_docs)]
 pub enum VoiceModel {
   A,
   B,
@@ -168,6 +185,7 @@ impl Display for VoiceModel {
   }
 }
 
+/// Creates a pause in n milliseconds
 pub struct Pause(pub u32);
 
 #[async_trait]
@@ -191,6 +209,7 @@ pub async fn render_all(
   samples
 }
 
+/// Saves the samples to a WAV file
 pub fn save_audio_file(samples: &mut [f32], path: &str) {
   let spec = WavSpec {
     channels: 1,
