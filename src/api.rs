@@ -115,6 +115,8 @@ pub async fn generate_tts(text: &str, model: &str) -> Vec<f32> {
 fn vec_u8_to_vec_f32(vec_u8: Vec<u8>) -> Vec<f32> {
   vec_u8
     .chunks_exact(2)
+    // Skip WAV header
+    .skip(8 * 4)
     .map(|chunk| {
       let mut bytes = [0; 2];
       bytes.copy_from_slice(chunk);
