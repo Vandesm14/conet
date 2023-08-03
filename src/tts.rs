@@ -6,6 +6,7 @@ use crate::request_tts;
 #[derive(Debug, Clone)]
 pub struct Tts {
   rng: StdRng,
+  use_cache: bool,
   pub memcache: std::collections::HashMap<String, String>,
 }
 
@@ -16,6 +17,7 @@ impl Default for Tts {
         1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
         21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
       ]),
+      use_cache: true,
       memcache: std::collections::HashMap::new(),
     }
   }
@@ -25,6 +27,11 @@ impl Tts {
   /// Create a new TTS instance
   pub fn new() -> Self {
     Self::default()
+  }
+
+  /// Disables the cache
+  pub fn disable_cache(&mut self) {
+    self.use_cache = false;
   }
 
   /// Get the Base64 WAVE data from the cache
@@ -41,6 +48,8 @@ impl Tts {
     // If the data exists in memcache, return it
     if self.memcache.contains_key(&key) {
       return Some(self.memcache[&key].clone());
+    } else if !self.use_cache {
+      return None;
     }
 
     let path = format!("/tmp/conet/{}.wav", key);
@@ -68,6 +77,10 @@ impl Tts {
     // If the key doesn't exist, insert it
     if !self.memcache.contains_key(&key) {
       self.memcache.insert(key.clone(), String::new());
+    }
+
+    if !self.use_cache {
+      return;
     }
 
     let path = format!("/tmp/conet/{}.wav", key);

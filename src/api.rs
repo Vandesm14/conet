@@ -35,7 +35,8 @@ struct Response {
 
 /// Send an API request to Google Cloud Text-to-Speech and return the Base64 WAVE data
 pub async fn request_tts(text: &str, model: &str) -> String {
-  let bearer_token = std::env::var("GCLOUD_BEARER").unwrap();
+  let bearer_token = std::env::var("GCLOUD_BEARER")
+    .expect("Environment variable: GCLOUD_BEARER is not set");
   let project = "ornate-axiom-327716";
   let post_body = PostBody {
     input: Input {

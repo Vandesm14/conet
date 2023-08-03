@@ -1,17 +1,49 @@
 #![feature(iter_intersperse)]
 
+use core::panic;
 use std::time::Instant;
 
+use clap::Parser;
 use conet::Tts;
 use hound::WavSpec;
 use lowpass_filter::lowpass_filter;
 use spellabet::{PhoneticConverter, SpellingAlphabet};
 
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+  /// Secret message to encode
+  #[arg(required = true)]
+  message: String,
+
+  /// Encoding method to use for secret message
+  #[arg(long, short)]
+  encoding: Option<String>,
+
+  /// Disables the cache
+  #[arg(long, short)]
+  disable_cache: bool,
+
+  /// Output file
+  #[arg(long, short)]
+  output: Option<String>,
+}
+
 #[tokio::main]
 async fn main() {
+  let args = Args::parse();
+
+  let encoding = &args.encoding;
+  let disable_cache = &args.disable_cache;
+  let message = &args.message;
+  let output = &args.output;
+
   let start_time = Instant::now();
   let mut tts = Tts::new();
-  let secret_phrase = "There is nothing left to fear but fear itself.";
+
+  if *disable_cache {
+    tts.disable_cache();
+  }
 
   // Create initial preamble
   let mut samples = tts
@@ -24,7 +56,14 @@ async fn main() {
   // Long pause between preamble and secret phrase
   samples.extend([0.0f32; 24_000]);
 
-  ascii_encoding(secret_phrase, &mut samples, &mut tts).await;
+  match encoding {
+    Some(encoding) => match encoding.as_str() {
+      "ascii" => ascii_encoding(message, &mut samples, &mut tts).await,
+      "phonetic" => phonetic_encoding(message, &mut samples, &mut tts).await,
+      _ => panic!("Invalid encoding method: {}", encoding),
+    },
+    None => no_encoding(message, &mut samples, &mut tts).await,
+  }
 
   let end_time = Instant::now();
 
@@ -34,8 +73,19 @@ async fn main() {
     end_time.duration_since(start_time).as_millis().to_string()
   );
 
+  let default_path = "/tmp/conet/audio.wav";
+  let output = match output {
+    Some(output) => output,
+    None => default_path,
+  };
+
   // Save audio file
-  save_audio_file(&mut samples);
+  save_audio_file(&mut samples, output);
+}
+
+async fn no_encoding(string: &str, samples: &mut Vec<f32>, tts: &mut Tts) {
+  let more_samples = tts.generate(string, None).await;
+  samples.extend(more_samples);
 }
 
 async fn ascii_encoding(string: &str, samples: &mut Vec<f32>, tts: &mut Tts) {
@@ -92,7 +142,7 @@ async fn phonetic_encoding(
   }
 }
 
-fn save_audio_file(samples: &mut [f32]) {
+fn save_audio_file(samples: &mut [f32], path: &str) {
   let spec = WavSpec {
     channels: 1,
     sample_rate: 24_000,
@@ -107,8 +157,7 @@ fn save_audio_file(samples: &mut [f32]) {
     sample_format: hound::SampleFormat::Int,
   };
 
-  let mut writer =
-    hound::WavWriter::create("/tmp/conet/audio.wav", output_spec).unwrap();
+  let mut writer = hound::WavWriter::create(path, output_spec).unwrap();
 
   lowpass_filter(samples, 24_000.0, 8_000.0);
 
