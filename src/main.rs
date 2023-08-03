@@ -27,6 +27,10 @@ struct Args {
   /// Output file
   #[arg(long, short)]
   output: Option<String>,
+
+  /// Random voice per chunk
+  #[arg(long)]
+  no_random: bool,
 }
 
 #[tokio::main]
@@ -37,12 +41,17 @@ async fn main() {
   let disable_cache = &args.disable_cache;
   let message = &args.message;
   let output = &args.output;
+  let no_random = &args.no_random;
 
   let start_time = Instant::now();
   let mut tts = Tts::new();
 
   if *disable_cache {
-    tts.disable_cache();
+    tts.without_cache();
+  }
+
+  if *no_random {
+    tts.without_randomness();
   }
 
   // Create initial preamble

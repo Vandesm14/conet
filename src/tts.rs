@@ -7,6 +7,7 @@ use crate::request_tts;
 pub struct Tts {
   rng: StdRng,
   use_cache: bool,
+  use_randomness: bool,
   pub memcache: std::collections::HashMap<String, String>,
 }
 
@@ -18,6 +19,7 @@ impl Default for Tts {
         21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
       ]),
       use_cache: true,
+      use_randomness: true,
       memcache: std::collections::HashMap::new(),
     }
   }
@@ -30,8 +32,15 @@ impl Tts {
   }
 
   /// Disables the cache
-  pub fn disable_cache(&mut self) {
+  pub fn without_cache(&mut self) -> &mut Self {
     self.use_cache = false;
+    self
+  }
+
+  /// Disables randomization
+  pub fn without_randomness(&mut self) -> &mut Self {
+    self.use_randomness = false;
+    self
   }
 
   fn format_key(text: impl AsRef<[u8]>, model: impl AsRef<[u8]>) -> String {
@@ -108,7 +117,10 @@ impl Tts {
     let model = match model {
       Some(model) => model.to_owned(),
       None => {
-        let model = model_letters[self.rng.gen_range(0..model_letters.len())];
+        let model = match self.use_randomness {
+          true => model_letters[self.rng.gen_range(0..model_letters.len())],
+          false => 'F',
+        };
         format!("en-US-Standard-{}", model)
       }
     };
