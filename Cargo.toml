@@ -6,9 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-async-trait = "0.1.72"
+async-recursion = "1.0.4"
 base64 = "0.21.2"
-clap = { version = "4.3.19", features = ["derive"] }
 hound = "3.5.0"
 lowpass-filter = "0.3.2"
 rand = "0.8.5"

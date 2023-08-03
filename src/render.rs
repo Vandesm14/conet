@@ -1,22 +1,47 @@
 #![warn(missing_docs)]
 
 use crate::Tts;
-use async_trait::async_trait;
+use async_recursion::async_recursion;
 use core::fmt;
 use hound::WavSpec;
 use lowpass_filter::lowpass_filter;
 use spellabet::{PhoneticConverter, SpellingAlphabet};
 use std::{
   fmt::{Display, Formatter},
-  rc::Rc,
   time::Instant,
 };
 
-#[async_trait]
-/// A trait for rendering WAVE audio samples (f32)
-pub trait Render {
-  /// Renders the audio samples into the given vector
-  async fn render(&self, samples: &mut Vec<f32>, tts: &mut Tts);
+#[derive(Clone, Copy, Debug)]
+/// The voice model to use when rendering text to speech (Based on the `en-US-Standard-*` voices of [Google Cloud Text-to-Speech](https://cloud.google.com/text-to-speech/docs/voices))
+#[allow(missing_docs)]
+pub enum VoiceModel {
+  A,
+  B,
+  C,
+  D,
+  E,
+  F,
+  G,
+  H,
+  I,
+  J,
+}
+
+impl Display for VoiceModel {
+  fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    match self {
+      VoiceModel::A => write!(f, "A"),
+      VoiceModel::B => write!(f, "B"),
+      VoiceModel::C => write!(f, "C"),
+      VoiceModel::D => write!(f, "D"),
+      VoiceModel::E => write!(f, "E"),
+      VoiceModel::F => write!(f, "F"),
+      VoiceModel::G => write!(f, "G"),
+      VoiceModel::H => write!(f, "H"),
+      VoiceModel::I => write!(f, "I"),
+      VoiceModel::J => write!(f, "J"),
+    }
+  }
 }
 
 /// The encoding method to use when rendering text to speech
@@ -73,132 +98,120 @@ impl<'a> Speak<'a> {
   }
 }
 
-#[async_trait]
-impl<'a> Render for Speak<'a> {
-  async fn render(&self, samples: &mut Vec<f32>, tts: &mut Tts) {
-    match self.encoding {
-      Some(Encoding::Words) => {
-        // Split the secret phrase into words
-        let words = self.text.split_whitespace();
-
-        // Run through each word and TTS samples
-        for word in words {
-          let more_samples = tts.generate(word, self.model()).await;
-          samples.extend(more_samples);
-        }
-      }
-      Some(Encoding::Ascii) => {
-        // Convert secret phrase into ascii codes (String of numbers)
-        let words = self
-          .text
-          .as_bytes()
-          .iter()
-          // Convert each byte into a string, padded with 0s
-          .map(|b| format!("{:0>3}", b))
-          .reduce(|a, b| a + &b)
-          .unwrap();
-
-        // Split the ascii string into chars
-        let words = words.chars().collect::<Vec<_>>();
-
-        // Split into chunks of 5
-        let words = words.chunks(5);
-
-        // Run throuch each chunk and TTS samples
-        for word in words {
-          for char in word {
-            let more_samples =
-              tts.generate(&char.to_string(), self.model()).await;
-            samples.extend(more_samples);
-
-            // Short pause between letters
-            Pause(600).render(samples, tts).await;
-          }
-
-          // Long pause between words
-          Pause(400).render(samples, tts).await;
-        }
-      }
-      Some(Encoding::Phonetic) => {
-        {
-          let converter = PhoneticConverter::new(&SpellingAlphabet::Nato);
-
-          // Convert secret phrase into phonetic alphabet
-          let string = converter.convert(self.text);
-
-          // Split into words
-          let words = string.split_whitespace();
-
-          // Run throuch each word and TTS samples
-          for word in words {
-            if word.to_lowercase().as_str() == "space" {
-              // Long pause between words
-              Pause(600).render(samples, tts).await;
-              continue;
-            }
-
-            let more_samples = tts.generate(word, self.model()).await;
-            samples.extend(more_samples);
-
-            // Short pause between words
-            Pause(160).render(samples, tts).await;
-          }
-        }
-      }
-      None => {
-        let more_samples = tts.generate(self.text, self.model()).await;
-        samples.extend(more_samples);
-      }
-    }
-  }
-}
-
-#[derive(Clone, Copy, Debug)]
-/// The voice model to use when rendering text to speech (Based on the `en-US-Standard-*` voices of [Google Cloud Text-to-Speech](https://cloud.google.com/text-to-speech/docs/voices))
-#[allow(missing_docs)]
-pub enum VoiceModel {
-  A,
-  B,
-  C,
-  D,
-  E,
-  F,
-  G,
-  H,
-  I,
-  J,
-}
-
-impl Display for VoiceModel {
-  fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-    match self {
-      VoiceModel::A => write!(f, "A"),
-      VoiceModel::B => write!(f, "B"),
-      VoiceModel::C => write!(f, "C"),
-      VoiceModel::D => write!(f, "D"),
-      VoiceModel::E => write!(f, "E"),
-      VoiceModel::F => write!(f, "F"),
-      VoiceModel::G => write!(f, "G"),
-      VoiceModel::H => write!(f, "H"),
-      VoiceModel::I => write!(f, "I"),
-      VoiceModel::J => write!(f, "J"),
-    }
-  }
-}
-
 /// Creates a pause in n milliseconds
 pub struct Pause(pub u32);
 
-#[async_trait]
-impl Render for Pause {
-  async fn render(&self, samples: &mut Vec<f32>, _tts: &mut Tts) {
-    samples.extend(vec![0.0f32; 24 * (self.0 as usize)])
+/// An unrendered audio clip
+pub enum Clip<'a> {
+  /// A clip that speaks text
+  Speak(Speak<'a>),
+
+  /// A clip that pauses for a specified amount of time
+  Pause(Pause),
+}
+
+impl<'a> From<Speak<'a>> for Clip<'a> {
+  fn from(speak: Speak<'a>) -> Self {
+    Clip::Speak(speak)
+  }
+}
+
+impl From<Pause> for Clip<'_> {
+  fn from(pause: Pause) -> Self {
+    Clip::Pause(pause)
+  }
+}
+
+impl<'a> Clip<'a> {
+  #[async_recursion]
+  async fn render(&self, samples: &mut Vec<f32>, tts: &mut Tts) {
+    match self {
+      Clip::Speak(speak) => {
+        match speak.encoding {
+          Some(Encoding::Words) => {
+            // Split the secret phrase into words
+            let words = speak.text.split_whitespace();
+
+            // Run through each word and TTS samples
+            for word in words {
+              let more_samples = tts.generate(word, speak.model()).await;
+              samples.extend(more_samples);
+            }
+          }
+          Some(Encoding::Ascii) => {
+            // Convert secret phrase into ascii codes (String of numbers)
+            let words = speak
+              .text
+              .as_bytes()
+              .iter()
+              // Convert each byte into a string, padded with 0s
+              .map(|b| format!("{:0>3}", b))
+              .reduce(|a, b| a + &b)
+              .unwrap();
+
+            // Split the ascii string into chars
+            let words = words.chars().collect::<Vec<_>>();
+
+            // Split into chunks of 5
+            let words = words.chunks(5);
+
+            // Run throuch each chunk and TTS samples
+            for word in words {
+              for char in word {
+                let more_samples =
+                  tts.generate(&char.to_string(), speak.model()).await;
+                samples.extend(more_samples);
+
+                // Short pause between letters
+                Clip::from(Pause(600)).render(samples, tts).await;
+              }
+
+              // Long pause between words
+              Clip::from(Pause(400)).render(samples, tts).await;
+            }
+          }
+          Some(Encoding::Phonetic) => {
+            {
+              let converter = PhoneticConverter::new(&SpellingAlphabet::Nato);
+
+              // Convert secret phrase into phonetic alphabet
+              let string = converter.convert(speak.text);
+
+              // Split into words
+              let words = string.split_whitespace();
+
+              // Run throuch each word and TTS samples
+              for word in words {
+                if word.to_lowercase().as_str() == "space" {
+                  // Long pause between words
+                  Clip::from(Pause(600)).render(samples, tts).await;
+                  continue;
+                }
+
+                let more_samples = tts.generate(word, speak.model()).await;
+                samples.extend(more_samples);
+
+                // Short pause between words
+                Clip::from(Pause(160)).render(samples, tts).await;
+              }
+            }
+          }
+          None => {
+            let more_samples = tts.generate(speak.text, speak.model()).await;
+            samples.extend(more_samples);
+          }
+        }
+      }
+      Clip::Pause(pause) => {
+        samples.extend(vec![0.0f32; 24 * (pause.0 as usize)])
+      }
+    }
   }
 }
 
 /// Renders all clips and returns the WAV samples
-pub async fn render_all(
-  clips: impl Iterator<Item = Rc<dyn Render>>,
+pub async fn render_all<'a>(
+  clips: impl Iterator<Item = Clip<'a>>,
   tts: &mut Tts,
 ) -> Vec<f32> {
   let start_time = Instant::now();
