@@ -117,7 +117,7 @@ impl Tts {
   pub async fn generate(
     &mut self,
     text: &str,
-    model: Option<&str>,
+    model: Option<String>,
   ) -> Vec<f32> {
     let text = text.to_lowercase();
     let text = text.as_str();
@@ -125,14 +125,13 @@ impl Tts {
     let model_letters = "ABCDEFGHIJ".chars().collect::<Vec<_>>();
     let model = match model {
       Some(model) => model.to_owned(),
-      None => {
-        let model = match self.use_randomness {
-          true => model_letters[self.rng.gen_range(0..model_letters.len())],
-          false => 'F',
-        };
-        format!("en-US-Standard-{}", model)
+      None => match self.use_randomness {
+        true => model_letters[self.rng.gen_range(0..model_letters.len())],
+        false => 'F',
       }
+      .to_string(),
     };
+    let model = format!("en-US-Standard-{}", model);
 
     let base64_string = match Tts::get_from_cache(self, text, &model) {
       Some(val) => {
