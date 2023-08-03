@@ -34,6 +34,13 @@ impl Tts {
     self.use_cache = false;
   }
 
+  fn format_key(text: impl AsRef<[u8]>, model: impl AsRef<[u8]>) -> String {
+    let text = general_purpose::STANDARD.encode(text);
+    let model = general_purpose::STANDARD.encode(model);
+
+    format!("t{}-m{}", text, model)
+  }
+
   /// Get the Base64 WAVE data from the cache
   pub fn get_from_cache(
     &mut self,
@@ -43,7 +50,7 @@ impl Tts {
     let text = general_purpose::STANDARD.encode(text);
     let model = general_purpose::STANDARD.encode(model);
 
-    let key = format!("{}-{}", text, model);
+    let key = Tts::format_key(text, model);
 
     // If the data exists in memcache, return it
     if self.memcache.contains_key(&key) {
@@ -73,7 +80,8 @@ impl Tts {
     let text = general_purpose::STANDARD.encode(text);
     let model = general_purpose::STANDARD.encode(model);
 
-    let key = format!("{}-{}", text, model);
+    let key = Tts::format_key(text, model);
+
     // If the key doesn't exist, insert it
     if !self.memcache.contains_key(&key) {
       self.memcache.insert(key.clone(), String::new());
