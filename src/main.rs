@@ -16,5 +16,5 @@ async fn main() {
   ];
 
   let mut samples = render_all(clips.into_iter(), tts).await;
-  save_audio_file(&mut samples, "/tmp/conetto/audio.wav");
+  save_audio_file(&mut samples, DEFAULT_RENDER_PATH);
 }

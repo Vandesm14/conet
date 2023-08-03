@@ -209,6 +209,9 @@ pub async fn render_all(
   samples
 }
 
+/// The default file path for the rendered audio file
+pub const DEFAULT_RENDER_PATH: &str = "/tmp/conetto/audio.wav";
+
 /// Saves the samples to a WAV file
 pub fn save_audio_file(samples: &mut [f32], path: &str) {
   let spec = WavSpec {

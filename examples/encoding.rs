@@ -16,5 +16,5 @@ async fn main() {
   ];
 
   let mut samples = render_all(clips.into_iter(), &mut tts).await;
-  save_audio_file(&mut samples, "audio.wav");
+  save_audio_file(&mut samples, DEFAULT_RENDER_PATH);
 }
