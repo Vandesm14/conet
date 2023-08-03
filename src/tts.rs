@@ -1,3 +1,5 @@
+use std::fs;
+
 use base64::{engine::general_purpose, Engine};
 use rand::{rngs::StdRng, Rng, SeedableRng};
 
@@ -100,6 +102,7 @@ impl Tts {
       return;
     }
 
+    fs::create_dir_all("/tmp/conet").unwrap();
     let path = format!("/tmp/conet/{}.wav", key);
     std::fs::write(path, contents).unwrap();
   }
