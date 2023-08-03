@@ -2,16 +2,14 @@ use conetto::*;
 
 #[tokio::main]
 async fn main() {
-  let mut tts = Tts::new(TTSService::Espeak);
+  let mut tts = Tts::new(TTSService::Google);
   let clips: Vec<Clip> = vec![
     Speak::new("Phonetic encoding").into(),
     Speak::new("ABCD").with_encoding(Encoding::Phonetic).into(),
-    Pause(1_000).into(),
+    //
     Speak::new("ASCII encoding").into(),
-    Speak::new("ASCII Chars")
-      .with_encoding(Encoding::Ascii)
-      .into(),
-    Pause(1_000).into(),
+    Speak::new("foo").with_encoding(Encoding::Ascii).into(),
+    //
     Speak::new("Words encoding").into(),
     Speak::new("Use different voices")
       .with_encoding(Encoding::Words)
