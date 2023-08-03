@@ -1,12 +1,12 @@
 #![feature(iter_intersperse)]
 
-use conet::TTS;
+use conet::Tts;
 use hound::WavSpec;
 use lowpass_filter::lowpass_filter;
 
 #[tokio::main]
 async fn main() {
-  let mut tts = TTS::new();
+  let mut tts = Tts::new();
   let secret_phrase = "Hello, World!";
 
   // Create initial preamble
@@ -26,7 +26,7 @@ async fn main() {
   save_audio_file(&mut samples);
 }
 
-async fn ascii_encoding(string: &str, samples: &mut Vec<f32>, tts: &mut TTS) {
+async fn ascii_encoding(string: &str, samples: &mut Vec<f32>, tts: &mut Tts) {
   // Convert secret phrase into ascii codes (String of numbers)
   let words = string
     .as_bytes()

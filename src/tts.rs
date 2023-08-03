@@ -4,12 +4,12 @@ use rand::{rngs::StdRng, Rng, SeedableRng};
 use crate::request_tts;
 
 #[derive(Debug, Clone)]
-pub struct TTS {
+pub struct Tts {
   rng: StdRng,
   pub memcache: std::collections::HashMap<String, String>,
 }
 
-impl Default for TTS {
+impl Default for Tts {
   fn default() -> Self {
     Self {
       rng: StdRng::from_seed([
@@ -21,7 +21,7 @@ impl Default for TTS {
   }
 }
 
-impl TTS {
+impl Tts {
   /// Create a new TTS instance
   pub fn new() -> Self {
     Self::default()
@@ -92,7 +92,7 @@ impl TTS {
       }
     };
 
-    let base64_string = match TTS::get_from_cache(self, text, &model) {
+    let base64_string = match Tts::get_from_cache(self, text, &model) {
       Some(val) => {
         println!("Cache hit: {}-{}", text, &model);
         val
@@ -100,7 +100,7 @@ impl TTS {
       None => {
         println!("Cache miss: {}-{}", text, model);
         let val = request_tts(text, &model).await;
-        TTS::send_to_cache(self, text, model, &val);
+        Tts::send_to_cache(self, text, model, &val);
         val
       }
     };
