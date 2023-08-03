@@ -1,5 +1,7 @@
 #![feature(iter_intersperse)]
 
+use std::time::Instant;
+
 use conet::Tts;
 use hound::WavSpec;
 use lowpass_filter::lowpass_filter;
@@ -7,8 +9,9 @@ use spellabet::{PhoneticConverter, SpellingAlphabet};
 
 #[tokio::main]
 async fn main() {
+  let start_time = Instant::now();
   let mut tts = Tts::new();
-  let secret_phrase = "Hello, World!";
+  let secret_phrase = "There is nothing left to fear but fear itself.";
 
   // Create initial preamble
   let mut samples = tts
@@ -22,6 +25,14 @@ async fn main() {
   samples.extend([0.0f32; 24_000]);
 
   ascii_encoding(secret_phrase, &mut samples, &mut tts).await;
+
+  let end_time = Instant::now();
+
+  println!(
+    "Generated {} samples in {}ms",
+    samples.len(),
+    end_time.duration_since(start_time).as_millis().to_string()
+  );
 
   // Save audio file
   save_audio_file(&mut samples);
