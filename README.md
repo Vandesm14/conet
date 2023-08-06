@@ -60,6 +60,6 @@ async fn main() {
 }
 ```
 
-Running this code will create an audio file at `/tmp/conetto.wav`.
+Running this code will create an audio file at `.conneto/audio.wav` in the project's directory.
 
 _For more examples, see the [examples](./examples) directory._

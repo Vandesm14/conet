@@ -234,7 +234,7 @@ pub async fn render_all<'a>(
 }
 
 /// The default file path for the rendered audio file
-pub const DEFAULT_RENDER_PATH: &str = "/tmp/conetto/audio.wav";
+pub const DEFAULT_RENDER_PATH: &str = ".conetto/audio.wav";
 
 /// Saves the samples to a WAV file
 pub fn save_audio_file(samples: &mut [f32], path: &str) {

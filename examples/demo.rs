@@ -2,7 +2,7 @@ use conetto::*;
 
 #[tokio::main]
 async fn main() {
-  let mut tts = Tts::new(TTSService::Espeak);
+  let mut tts = Tts::new(TTSService::Espeak, true, true);
   let clips: Vec<Clip> = vec![Speak::new("Hello, World!").into()];
 
   let mut samples = render_all(clips.into_iter(), &mut tts).await;

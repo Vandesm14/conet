@@ -30,37 +30,38 @@ pub struct Tts {
 
 impl Default for Tts {
   fn default() -> Self {
-    Self {
-      rng: StdRng::from_seed([
-        1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-        21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
-      ]),
-      use_cache: true,
-      use_randomness: true,
-      memcache: std::collections::HashMap::new(),
-      service: TTSService::Google,
-    }
+    Self::new(TTSService::Google, true, true)
   }
 }
 
 impl Tts {
   /// Create a new TTS instance
-  pub fn new(service: TTSService) -> Self {
-    Tts {
+  pub fn new(
+    service: TTSService,
+    use_cache: bool,
+    use_randomness: bool,
+  ) -> Self {
+    Self {
+      rng: StdRng::from_seed([
+        1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+        21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
+      ]),
+      use_cache,
+      use_randomness,
+      memcache: std::collections::HashMap::new(),
       service,
-      ..Default::default()
     }
-  }
-
-  /// Disables the cache (still uses the memcache)
-  pub fn without_cache(&mut self) -> &mut Self {
-    self.use_cache = false;
-    self
   }
 
   /// Disables randomization
   pub fn without_randomness(&mut self) -> &mut Self {
     self.use_randomness = false;
+    self
+  }
+
+  /// Sets the TTS service
+  pub fn with_service(&mut self, service: TTSService) -> &mut Self {
+    self.service = service;
     self
   }
 
@@ -89,7 +90,7 @@ impl Tts {
       return None;
     }
 
-    let path = format!("/tmp/conetto/{}.wav", key);
+    let path = format!(".conetto/cache/{}.wav", key);
     if std::path::Path::new(&path).exists() {
       let data = std::fs::read(path).unwrap();
 
@@ -127,8 +128,8 @@ impl Tts {
     // Decode Base64 into bytes
     let contents = general_purpose::STANDARD.decode(contents).unwrap();
 
-    fs::create_dir_all("/tmp/conetto").unwrap();
-    let path = format!("/tmp/conetto/{}.wav", key);
+    fs::create_dir_all(".conetto/cache").unwrap();
+    let path = format!(".conetto/cache/{}.wav", key);
     std::fs::write(path, contents).unwrap();
   }
 

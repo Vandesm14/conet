@@ -2,7 +2,7 @@ use conetto::*;
 
 #[tokio::main]
 async fn main() {
-  let mut tts = Tts::new(TTSService::Espeak);
+  let mut tts = Tts::new(TTSService::Espeak, true, true);
   let clips: Vec<Clip> = vec![
     Speak::new("Phonetic encoding").into(),
     Speak::new("ABCD").with_encoding(Encoding::Phonetic).into(),
