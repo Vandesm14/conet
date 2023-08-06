@@ -7,8 +7,7 @@ use rand::{rngs::StdRng, Rng, SeedableRng};
 
 use crate::{espeak_tts, google_cloud_tts};
 
-/// The voice model to use
-
+/// The voice model to use for text-to-speech
 #[derive(Debug, Clone)]
 pub enum TTSService {
   /// [Google Cloud Text-to-Speech](https://cloud.google.com/text-to-speech)
@@ -65,11 +64,9 @@ impl Tts {
     self
   }
 
-  fn format_key(text: impl AsRef<[u8]>, model: impl AsRef<[u8]>) -> String {
-    let text = general_purpose::STANDARD.encode(text);
-    let model = general_purpose::STANDARD.encode(model);
-
-    format!("t{}-m{}", text, model)
+  fn format_key(text: String, model: String) -> String {
+    let key = format!("{}-{}", text, model);
+    general_purpose::STANDARD.encode(key)
   }
 
   /// Get the Base64 WAVE data from the cache
